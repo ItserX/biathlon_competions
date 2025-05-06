@@ -60,11 +60,11 @@ go build -o bin/app ./cmd/main.go
 ./bin/app -events=<path-to-events-file> -config=<path-to-config-file> 
 ```
 
-##Tests
+## Tests
 ```bash 
 go test -cover ./...
 ```
-###Coverage
+### Coverage
 ```
         github.com/ItserX/biathlon_competions/cmd               coverage: 0.0% of statements
 ok      github.com/ItserX/biathlon_competions/internal/config   0.002s  coverage: 100.0% of statements
