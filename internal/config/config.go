@@ -1,23 +1,25 @@
-package biathlon
+package config
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
-)
 
-type Config struct {
-	Laps        int        `json:"laps"`
-	LapLen      int        `json:"lapLen"`
-	PenaltyLen  int        `json:"penaltyLen"`
-	FiringLines int        `json:"firingLines"`
-	Start       *time.Time `json:"start"`
-	StartDelta  *time.Time `json:"startDelta"`
-}
+	"github.com/ItserX/biathlon_competions/internal/constants"
+)
 
 type flexibleTime struct {
 	time.Time
+}
+
+type Config struct {
+	Laps        int       `json:"laps"`
+	LapLen      int       `json:"lapLen"`
+	PenaltyLen  int       `json:"penaltyLen"`
+	FiringLines int       `json:"firingLines"`
+	Start       time.Time `json:"start"`
+	StartDelta  time.Time `json:"startDelta"`
 }
 
 func (ft *flexibleTime) UnmarshalJSON(data []byte) error {
@@ -26,13 +28,13 @@ func (ft *flexibleTime) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	t, err := time.Parse("15:04:05", timeStr)
+	t, err := time.Parse(constants.TimeLayoutConfig, timeStr)
 	if err == nil {
 		ft.Time = t
 		return nil
 	}
 
-	return fmt.Errorf("invalid time format: %s, expected HH:MM:SS or HH:MM:SS.fff", timeStr)
+	return fmt.Errorf("invalid time format: %s, expected HH:MM:SS", timeStr)
 }
 
 func ParseConfig(path string) (*Config, error) {
@@ -63,10 +65,10 @@ func ParseConfig(path string) (*Config, error) {
 	}
 
 	if tempConfig.Start != nil {
-		config.Start = &tempConfig.Start.Time
+		config.Start = tempConfig.Start.Time
 	}
 	if tempConfig.StartDelta != nil {
-		config.StartDelta = &tempConfig.StartDelta.Time
+		config.StartDelta = tempConfig.StartDelta.Time
 	}
 
 	return config, nil

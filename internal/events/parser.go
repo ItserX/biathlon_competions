@@ -1,39 +1,20 @@
-package biathlon
+package events
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
-)
 
-type Event struct {
-	CurrentTime  *time.Time
-	ID           EventType
-	CompetitorID int
-	StartTime    *time.Time
-	FiringRange  int
-	Target       int
-	Comment      string
-}
-
-type EventType int
-
-const (
-	CompetitorRegistered EventType = iota + 1
-	StartTimeSet
-	OnStartLine
-	CompetitorStarted
-	OnFiringRange
-	TargetHit
-	LeftFiringRange
-	EnteredPenaltyLaps
-	LeftPenaltyLaps
-	EndedMainLap
-	CannotContinue
+	"github.com/ItserX/biathlon_competions/internal/constants"
 )
 
 func ParseIncomingEvent(eventString string) (*Event, error) {
 	params := strings.Split(eventString, " ")
+
+	if len(params) < 3 {
+		return nil, fmt.Errorf("Incorrect eventString")
+	}
 
 	currentTime, err := parseTime(params[0])
 	if err != nil {
@@ -45,40 +26,42 @@ func ParseIncomingEvent(eventString string) (*Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	eventType := EventType(eventID)
+	eventType := constants.EventType(eventID)
 
 	competitorID, err := strconv.Atoi(params[2])
 	if err != nil {
 		return nil, err
 	}
 
-	event := Event{ID: eventType, CurrentTime: &currentTime, CompetitorID: competitorID}
+	event := Event{ID: eventType, CurrentTime: currentTime, CompetitorID: competitorID}
 
 	if len(params) > 3 {
 		switch eventType {
-		case StartTimeSet:
+		case constants.StartTimeSet:
 			startTime, err := parseTime(params[3])
 			if err != nil {
 				return nil, err
 			}
-			event.StartTime = &startTime
+			event.StartTime = startTime
 
-		case OnFiringRange:
+		case constants.OnFiringRange:
 			firingRange, err := strconv.Atoi(params[3])
 			if err != nil {
 				return nil, err
 			}
 			event.FiringRange = firingRange
 
-		case TargetHit:
+		case constants.TargetHit:
 			target, err := strconv.Atoi(params[3])
 			if err != nil {
 				return nil, err
 			}
 			event.Target = target
 
-		case CannotContinue:
+		case constants.CannotContinue:
 			event.Comment = strings.Join(params[3:], " ")
+		default:
+			return nil, fmt.Errorf("Incorrect eventID")
 		}
 	}
 
@@ -87,7 +70,8 @@ func ParseIncomingEvent(eventString string) (*Event, error) {
 
 func parseTime(timeStr string) (time.Time, error) {
 	cleanStr := strings.Trim(timeStr, "[]")
-	parsedTime, err := time.Parse("15:04:05.000", cleanStr)
+
+	parsedTime, err := time.Parse(constants.TimeLayoutEvent, cleanStr)
 	if err != nil {
 		return time.Time{}, err
 	}

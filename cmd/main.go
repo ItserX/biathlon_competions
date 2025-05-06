@@ -1,20 +1,78 @@
 package main
 
 import (
-	biathlontracker "github.com/ItserX/biathlon_competions/internal"
+	"bufio"
+	"flag"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/ItserX/biathlon_competions/internal/config"
+	"github.com/ItserX/biathlon_competions/internal/events"
+	"github.com/ItserX/biathlon_competions/internal/report"
 )
 
-func main() {
-	ev1, _ := biathlontracker.ParseIncomingEvent("[09:05:59.867] 1 1")
-	ev2, _ := biathlontracker.ParseIncomingEvent("[09:15:00.841] 2 1 09:30:00.000")
-	ev3, _ := biathlontracker.ParseIncomingEvent("[09:29:45.734] 3 1")
-	ev4, _ := biathlontracker.ParseIncomingEvent("[09:30:01.005] 4 1")
-	ev5, _ := biathlontracker.ParseIncomingEvent("[09:49:31.659] 5 1 1")
+func ParseFlags() (string, string, error) {
+	eventsPath := flag.String("events", "", "File with incoming events")
+	configPath := flag.String("config", "", "File with configuration")
+	flag.Parse()
 
-	ms := []*biathlontracker.Event{ev1, ev2, ev3, ev4, ev5}
-	cfg, _ := biathlontracker.ParseConfig("/home/lucky7788/Загрузки/yadro/sunny_5_skiers/config.json")
-	rp := biathlontracker.RaceProcessor{Config: cfg, Competitors: make(map[int]*biathlontracker.Competitor)}
-	for _, val := range ms {
-		rp.ProcessEvent(val)
+	if *eventsPath == "" || *configPath == "" {
+		flag.Usage()
+		return "", "", fmt.Errorf("Flags not specified")
 	}
+
+	return *eventsPath, *configPath, nil
+
+}
+
+func ProcessEventsFile(rp *events.RaceProcessor, eventsPath string) error {
+	file, err := os.Open(eventsPath)
+	if err != nil {
+		return fmt.Errorf("Error open file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lineNumber := 0
+
+	for scanner.Scan() {
+		lineNumber++
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		event, err := events.ParseIncomingEvent(line)
+		if err != nil {
+			return fmt.Errorf("Error in string %d: %v\n", lineNumber, err)
+		}
+		rp.ProcessEvent(event)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("Error read file: %v\n", err)
+	}
+
+	return nil
+}
+
+func main() {
+
+	eventsPath, configPath, err := ParseFlags()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	cfg, _ := config.ParseConfig(configPath)
+	rp := events.RaceProcessor{Config: cfg, Competitors: make(map[int]*events.Competitor)}
+
+	err = ProcessEventsFile(&rp, eventsPath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	rep := report.GenerateReport(&rp)
+	fmt.Print(rep)
 }

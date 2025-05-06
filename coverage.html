@@ -1,0 +1,561 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cmd: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/ItserX/biathlon_competions/cmd/main.go (0.0%)</option>
+				
+				<option value="file1">github.com/ItserX/biathlon_competions/internal/config/config.go (100.0%)</option>
+				
+				<option value="file2">github.com/ItserX/biathlon_competions/internal/events/parser.go (83.3%)</option>
+				
+				<option value="file3">github.com/ItserX/biathlon_competions/internal/events/processor.go (91.9%)</option>
+				
+				<option value="file4">github.com/ItserX/biathlon_competions/internal/events/utils.go (100.0%)</option>
+				
+				<option value="file5">github.com/ItserX/biathlon_competions/internal/report/report.go (86.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "bufio"
+        "flag"
+        "fmt"
+        "os"
+        "strings"
+
+        "github.com/ItserX/biathlon_competions/internal/config"
+        "github.com/ItserX/biathlon_competions/internal/events"
+        "github.com/ItserX/biathlon_competions/internal/report"
+)
+
+func main() <span class="cov0" title="0">{
+
+        eventsPath := flag.String("events", "", "File with incoming events")
+        configPath := flag.String("config", "", "File with configuration")
+        flag.Parse()
+        cfg, _ := config.ParseConfig(*configPath)
+        rp := events.RaceProcessor{Config: cfg, Competitors: make(map[int]*events.Competitor)}
+
+        file, err := os.Open(*eventsPath)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Error open file: %v\n", err)
+                return
+        }</span>
+        <span class="cov0" title="0">defer file.Close()
+
+        scanner := bufio.NewScanner(file)
+        lineNumber := 0
+
+        for scanner.Scan() </span><span class="cov0" title="0">{
+                lineNumber++
+                line := scanner.Text()
+                if strings.TrimSpace(line) == "" </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">event, err := events.ParseIncomingEvent(line)
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Printf("Error in string %d: %v\n", lineNumber, err)
+                        continue</span>
+                }
+                <span class="cov0" title="0">rp.ProcessEvent(event)</span>
+        }
+
+        <span class="cov0" title="0">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Error read file: %v\n", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Print(report.GenerateReport(&amp;rp))</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
+
+import (
+        "encoding/json"
+        "fmt"
+        "os"
+        "time"
+
+        "github.com/ItserX/biathlon_competions/internal/constants"
+)
+
+type flexibleTime struct {
+        time.Time
+}
+
+type Config struct {
+        Laps        int       `json:"laps"`
+        LapLen      int       `json:"lapLen"`
+        PenaltyLen  int       `json:"penaltyLen"`
+        FiringLines int       `json:"firingLines"`
+        Start       time.Time `json:"start"`
+        StartDelta  time.Time `json:"startDelta"`
+}
+
+func (ft *flexibleTime) UnmarshalJSON(data []byte) error <span class="cov8" title="1">{
+        var timeStr string
+        if err := json.Unmarshal(data, &amp;timeStr); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">t, err := time.Parse(constants.TimeLayoutConfig, timeStr)
+        if err == nil </span><span class="cov8" title="1">{
+                ft.Time = t
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">return fmt.Errorf("invalid time format: %s, expected HH:MM:SS", timeStr)</span>
+}
+
+func ParseConfig(path string) (*Config, error) <span class="cov8" title="1">{
+        file, err := os.Open(path)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to open config file: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer file.Close()
+
+        var tempConfig struct {
+                Laps        int           `json:"laps"`
+                LapLen      int           `json:"lapLen"`
+                PenaltyLen  int           `json:"penaltyLen"`
+                FiringLines int           `json:"firingLines"`
+                Start       *flexibleTime `json:"start"`
+                StartDelta  *flexibleTime `json:"startDelta"`
+        }
+
+        if err := json.NewDecoder(file).Decode(&amp;tempConfig); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to decode config: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">config := &amp;Config{
+                Laps:        tempConfig.Laps,
+                LapLen:      tempConfig.LapLen,
+                PenaltyLen:  tempConfig.PenaltyLen,
+                FiringLines: tempConfig.FiringLines,
+        }
+
+        if tempConfig.Start != nil </span><span class="cov8" title="1">{
+                config.Start = tempConfig.Start.Time
+        }</span>
+        <span class="cov8" title="1">if tempConfig.StartDelta != nil </span><span class="cov8" title="1">{
+                config.StartDelta = tempConfig.StartDelta.Time
+        }</span>
+
+        <span class="cov8" title="1">return config, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package events
+
+import (
+        "fmt"
+        "strconv"
+        "strings"
+        "time"
+
+        "github.com/ItserX/biathlon_competions/internal/constants"
+)
+
+func ParseIncomingEvent(eventString string) (*Event, error) <span class="cov8" title="1">{
+        params := strings.Split(eventString, " ")
+
+        if len(params) &lt; 3 </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("Incorrect eventString")
+        }</span>
+
+        <span class="cov8" title="1">currentTime, err := parseTime(params[0])
+        if err != nil </span><span class="cov8" title="1">{
+
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">eventID, err := strconv.Atoi(params[1])
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">eventType := constants.EventType(eventID)
+
+        competitorID, err := strconv.Atoi(params[2])
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">event := Event{ID: eventType, CurrentTime: currentTime, CompetitorID: competitorID}
+
+        if len(params) &gt; 3 </span><span class="cov8" title="1">{
+                switch eventType </span>{
+                case constants.StartTimeSet:<span class="cov8" title="1">
+                        startTime, err := parseTime(params[3])
+                        if err != nil </span><span class="cov8" title="1">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">event.StartTime = startTime</span>
+
+                case constants.OnFiringRange:<span class="cov8" title="1">
+                        firingRange, err := strconv.Atoi(params[3])
+                        if err != nil </span><span class="cov8" title="1">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">event.FiringRange = firingRange</span>
+
+                case constants.TargetHit:<span class="cov8" title="1">
+                        target, err := strconv.Atoi(params[3])
+                        if err != nil </span><span class="cov8" title="1">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">event.Target = target</span>
+
+                case constants.CannotContinue:<span class="cov0" title="0">
+                        event.Comment = strings.Join(params[3:], " ")</span>
+                default:<span class="cov0" title="0">
+                        return nil, fmt.Errorf("Incorrect eventID")</span>
+                }
+        }
+
+        <span class="cov0" title="0">return &amp;event, nil</span>
+}
+
+func parseTime(timeStr string) (time.Time, error) <span class="cov8" title="1">{
+        cleanStr := strings.Trim(timeStr, "[]")
+
+        parsedTime, err := time.Parse(constants.TimeLayoutEvent, cleanStr)
+        if err != nil </span><span class="cov8" title="1">{
+                return time.Time{}, err
+        }</span>
+
+        <span class="cov8" title="1">return parsedTime, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package events
+
+import (
+        "fmt"
+        "time"
+
+        "github.com/ItserX/biathlon_competions/internal/constants"
+)
+
+func (rp *RaceProcessor) ProcessEvent(event *Event) <span class="cov8" title="1">{
+        switch event.ID </span>{
+        case constants.CompetitorRegistered:<span class="cov8" title="1">
+                rp.processRegistration(event)</span>
+        case constants.StartTimeSet:<span class="cov8" title="1">
+                rp.processStartTimeSet(event)</span>
+        case constants.OnStartLine:<span class="cov8" title="1">
+                rp.processOnStartLine(event)</span>
+        case constants.CompetitorStarted:<span class="cov8" title="1">
+                rp.processCompetitorStarted(event)</span>
+        case constants.OnFiringRange:<span class="cov8" title="1">
+                rp.processOnFiringRange(event)</span>
+        case constants.TargetHit:<span class="cov8" title="1">
+                rp.processTargetHit(event)</span>
+        case constants.LeftFiringRange:<span class="cov8" title="1">
+                rp.processLeftTheFiringRange(event)</span>
+        case constants.EnteredPenaltyLaps:<span class="cov8" title="1">
+                rp.processEnteredPenaltyLaps(event)</span>
+        case constants.LeftPenaltyLaps:<span class="cov8" title="1">
+                rp.processLeftPenaltyLaps(event)</span>
+        case constants.EndedMainLap:<span class="cov8" title="1">
+                rp.processEndedMainLap(event)</span>
+        case constants.CannotContinue:<span class="cov8" title="1">
+                rp.processCannotContinue(event)</span>
+        }
+}
+
+func (rp *RaceProcessor) processRegistration(event *Event) <span class="cov8" title="1">{
+        rp.Competitors[event.CompetitorID] = &amp;Competitor{Laps: make([]*Lap, rp.Config.Laps), PenaltyLaps: make([]*Lap, 0)}
+        fmt.Printf("[%s] The competitor(%d) registered\n", FormatTime(event.CurrentTime), event.CompetitorID)
+}</span>
+
+func (rp *RaceProcessor) processStartTimeSet(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+        competitor.SetStartTime = event.StartTime
+
+        fmt.Printf("[%s] The start time for the competitor(%d) was set by a draw to %s\n",
+                FormatTime(event.CurrentTime), event.CompetitorID, event.StartTime)
+}</span>
+
+func (rp *RaceProcessor) processOnStartLine(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+
+        if rp.isTooLaterToStart(event.CurrentTime, competitor.SetStartTime) </span><span class="cov8" title="1">{
+                competitor.Status = constants.StatusNotStarted
+                fmt.Printf("[%s] The competitor(%d) is disqualified\n", FormatTime(event.CurrentTime), event.CompetitorID)
+                return
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("[%s] The competitor(%d) is on the start line\n", FormatTime(event.CurrentTime), event.CompetitorID)</span>
+}
+
+func (rp *RaceProcessor) processCompetitorStarted(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+
+        if rp.isTooLaterToStart(event.CurrentTime, competitor.SetStartTime) </span><span class="cov0" title="0">{
+                competitor.Status = constants.StatusNotStarted
+                fmt.Printf("[%s] The competitor(%d) is disqualified\n", FormatTime(event.CurrentTime), event.CompetitorID)
+                return
+        }</span>
+
+        <span class="cov8" title="1">competitor.NumCurrentLap = 1
+        competitor.Laps[competitor.NumCurrentLap-1] = &amp;Lap{StartTime: competitor.SetStartTime}
+
+        fmt.Printf("[%s] The competitor(%d) has started\n", FormatTime(event.CurrentTime), event.CompetitorID)</span>
+}
+
+func (rp *RaceProcessor) processOnFiringRange(event *Event) <span class="cov8" title="1">{
+        fmt.Printf("[%s] The competitor(%d) is on the firing range(%d)\n",
+                FormatTime(event.CurrentTime), event.CompetitorID, event.FiringRange)
+}</span>
+
+func (rp *RaceProcessor) processTargetHit(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+        competitor.Hits += 1
+
+        fmt.Printf("[%s] The target(%d) has been hit by competitor(%d)\n", FormatTime(event.CurrentTime), event.Target, event.CompetitorID)
+}</span>
+
+func (rp *RaceProcessor) processLeftTheFiringRange(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+
+        competitor.Shots += constants.TargetsCount
+
+        fmt.Printf("[%s] The competitor(%d) left the firing range\n", FormatTime(event.CurrentTime), event.CompetitorID)
+}</span>
+
+func (rp *RaceProcessor) processEnteredPenaltyLaps(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+
+        penaltyLap := Lap{StartTime: event.CurrentTime}
+        competitor.PenaltyLaps = append(competitor.PenaltyLaps, &amp;penaltyLap)
+
+        fmt.Printf("[%s] The competitor(%d) entered the penalty laps\n", FormatTime(event.CurrentTime), event.CompetitorID)
+}</span>
+
+func (rp *RaceProcessor) processLeftPenaltyLaps(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+
+        currentPenaltyLap := competitor.PenaltyLaps[len(competitor.PenaltyLaps)-1]
+        currentPenaltyLap.TotalTime = rp.calculateTotalTime(currentPenaltyLap.StartTime, event.CurrentTime)
+        currentPenaltyLap.AvgSpeed = rp.calculateAvgSpeed(rp.Config.PenaltyLen, currentPenaltyLap.TotalTime)
+
+        fmt.Printf("[%s] The competitor(%d) left the penalty laps\n", FormatTime(event.CurrentTime), event.CompetitorID)
+}</span>
+
+func (rp *RaceProcessor) processEndedMainLap(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+
+        currentLap := competitor.Laps[competitor.NumCurrentLap-1]
+        currentLap.TotalTime = rp.calculateTotalTime(currentLap.StartTime, event.CurrentTime)
+        currentLap.AvgSpeed = rp.calculateAvgSpeed(rp.Config.LapLen, currentLap.TotalTime)
+        competitor.TotalTime = competitor.TotalTime.Add(currentLap.TotalTime.Sub(time.Time{}))
+        competitor.NumCurrentLap += 1
+        competitor.LapsCompleted += 1
+
+        if competitor.LapsCompleted &gt;= 1 &amp;&amp; competitor.LapsCompleted &lt; rp.Config.Laps </span><span class="cov8" title="1">{
+                competitor.Laps[competitor.NumCurrentLap-1] = &amp;Lap{StartTime: event.CurrentTime}
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("[%s] The competitor(%d) ended the main lap\n", FormatTime(event.CurrentTime), event.CompetitorID)
+
+        if competitor.LapsCompleted == rp.Config.Laps </span><span class="cov0" title="0">{
+                fmt.Printf("[%s] The competitor(%d) has finished\n", FormatTime(event.CurrentTime), event.CompetitorID)
+        }</span>
+
+}
+
+func (rp *RaceProcessor) processCannotContinue(event *Event) <span class="cov8" title="1">{
+        competitor := rp.Competitors[event.CompetitorID]
+        competitor.Status = constants.StatusNotFinished
+        fmt.Printf("[%s] The competitor(%d) can`t continue: %s\n", FormatTime(event.CurrentTime), event.CompetitorID, event.Comment)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package events
+
+import (
+        "fmt"
+        "time"
+)
+
+func FormatTime(t time.Time) string <span class="cov8" title="1">{
+        hour, min, sec := t.Clock()
+        millis := t.Nanosecond() / 1e6
+        return fmt.Sprintf("%02d:%02d:%02d.%03d", hour, min, sec, millis)
+}</span>
+
+func (rp *RaceProcessor) isTooLaterToStart(currentTime, startTime time.Time) bool <span class="cov8" title="1">{
+        return currentTime.Before(startTime.Add(rp.Config.StartDelta.Sub(time.Time{})))
+}</span>
+
+func (rp *RaceProcessor) calculateTotalTime(startTime, finishTime time.Time) time.Time <span class="cov8" title="1">{
+        totalTime := time.Time{}.Add(finishTime.Sub(startTime))
+        return totalTime
+}</span>
+
+func (rp *RaceProcessor) calculateAvgSpeed(len int, totalTime time.Time) float64 <span class="cov8" title="1">{
+        return float64(len) / (float64(totalTime.Hour()*3600+totalTime.Minute()*60+totalTime.Second()) +
+                float64(totalTime.Nanosecond())/1e9)
+
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package report
+
+import (
+        "fmt"
+        "sort"
+
+        "github.com/ItserX/biathlon_competions/internal/events"
+)
+
+func GenerateReport(rp *events.RaceProcessor) string <span class="cov8" title="1">{
+        completeString := ""
+        ids := make([]int, 0)
+        for id := range rp.Competitors </span><span class="cov8" title="1">{
+                ids = append(ids, id)
+        }</span>
+
+        <span class="cov8" title="1">sort.Slice(ids, func(i, j int) bool </span><span class="cov0" title="0">{
+                compI := rp.Competitors[ids[i]]
+                compJ := rp.Competitors[ids[j]]
+                return compI.TotalTime.Before(compJ.TotalTime)
+        }</span>)
+
+        <span class="cov8" title="1">for _, id := range ids </span><span class="cov8" title="1">{
+                val := rp.Competitors[id]
+
+                var fTime string
+                if val.Status == "" </span><span class="cov0" title="0">{
+                        fTime = events.FormatTime(rp.Competitors[id].TotalTime)
+                }</span> else<span class="cov8" title="1"> {
+                        fTime = val.Status
+                }</span>
+
+                <span class="cov8" title="1">fLaps := FormatLaps(val.Laps)
+
+                fPenaltyLaps := FormatLaps(val.PenaltyLaps)
+
+                completeString += fmt.Sprintf("[%s] %d %s %s %d/%d\n", fTime, id, fLaps, fPenaltyLaps, val.Hits, val.Shots)</span>
+        }
+        <span class="cov8" title="1">return completeString</span>
+
+}
+
+func FormatLaps(laps []*events.Lap) string <span class="cov8" title="1">{
+        var completeString string
+        for i, val := range laps </span><span class="cov8" title="1">{
+                if val.AvgSpeed == 0 </span><span class="cov8" title="1">{
+                        completeString += "{,}"
+                        continue</span>
+                }
+                <span class="cov8" title="1">if i &lt; len(laps)-1 </span><span class="cov8" title="1">{
+                        completeString += fmt.Sprintf("{%s, %.3f}, ", events.FormatTime(val.TotalTime), float64(int(val.AvgSpeed*1000))/1000)
+                }</span> else<span class="cov8" title="1"> {
+                        completeString += fmt.Sprintf("{%s, %.3f}", events.FormatTime(val.TotalTime), float64(int(val.AvgSpeed*1000))/1000)
+                }</span>
+        }
+
+        <span class="cov8" title="1">if len(laps) &gt; 1 </span><span class="cov8" title="1">{
+                return fmt.Sprintf("[%s]", completeString)
+        }</span>
+        <span class="cov8" title="1">return completeString</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
