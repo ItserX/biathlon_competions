@@ -1,16 +1,6 @@
 # System prototype for biathlon competitions
 The prototype must be able to work with a configuration file and a set of external events of a certain format.
 
-## Final report
-The final report should contain the list of all registered competitors
-sorted by ascending time.
-- Total time includes the difference between scheduled and actual start time or **NotStarted**/**NotFinished** marks
-- Time taken to complete each lap
-- Average speed for each lap [m/s]
-- Time taken to complete penalty laps
-- Average speed over penalty laps [m/s]
-- Number of hits/number of shots
-
 ## Build and run
 ### Run directly
 ```bash
@@ -72,3 +62,13 @@ EventID | extraParams | Comments
 32      |             | The competitor is disqualified
 33      |             | The competitor has finished
 ```
+
+## Final report
+The final report should contain the list of all registered competitors
+sorted by ascending time.
+- Total time includes the difference between scheduled and actual start time or **NotStarted**/**NotFinished** marks
+- Time taken to complete each lap
+- Average speed for each lap [m/s]
+- Time taken to complete penalty laps
+- Average speed over penalty laps [m/s]
+- Number of hits/number of shots
